@@ -6,7 +6,10 @@ axios.defaults.baseURL = "https://api.thecatapi.com/v1";
 axios.defaults.headers.common['x-api-key'] = API_KEY; 
 
 axios.interceptors.request.use((config) => {
+  config.metadata = {startTime: Date.now() }; 
 console.log("Request started:", config.url); 
+progressBar.style.width = "0%"; 
+document.body.style.cursor = "progress"; 
 return config; 
 }); 
 
@@ -15,6 +18,8 @@ axios.interceptors.response.use((response) => {
   ? Date.now() - response.config.metadata.startTime
   :"Unknown";
   console.log(`Request completed: ${response.config.urll} (${elapsedTime}ms)`);
+  progressBar.style.width = "100%"; 
+  document.body/style.cursor  = "default"; 
   return response; 
 }); 
 
@@ -26,6 +31,21 @@ const infoDump = document.getElementById("infoDump");
 const progressBar = document.getElementById("progressBar");
 // The get favourites button element.
 const getFavouritesBtn = document.getElementById("getFavouritesBtn");
+
+function updateProgress(ProgressEvent){
+  console("Progress event:", progressEvent); 
+  const progressBar = document.getElementById("progressBar"); 
+  const percentCompleted = Math.round(
+    (progressEvent.loaded * 100)  / progressEvent.total
+  ); 
+  progressBar.style.width = `${percentCompleted}%`; 
+}
+
+const progressBar = document.getElementById("progressBar"); 
+progressBar.style.width = "0%"; 
+document.body.style.cursor = "progress"; 
+
+return config 
 
 // Step 0: Store your API key in the keys.js file.
 
@@ -86,7 +106,7 @@ initialLoad();
     };
     const reponse = await axios.get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=10`, config); 
     return reponse.data; 
-  } 
+  }
     breedSelect.addEventListener("change", async(e) => {
       Carousel.clear(); 
       Carousel.start(); 
@@ -138,6 +158,8 @@ initialLoad();
  *   with for future projects.
  */
 
+
+
 /**
  * 7. As a final element of progress indication, add the following to your axios interceptors:
  * - In your request interceptor, set the body element's cursor style to "progress."
@@ -155,8 +177,23 @@ initialLoad();
  * - You can call this function by clicking on the heart at the top right of any image.
  */
 export async function favourite(imgId) {
+  try {
+    const favouriteResponse = await axios.get("/favourites"); 
+    const isFavourited = favouritesResponse.data.some(
+      (fav) => fav.img_Id === imgId
+    ); 
+    if (isFavourited) {
+      await axios.delete("/favourites", {data  { img_Id imgId} } ); 
+      console.log("Removed from favourites"); 
+    } else {
+      await axios.post("/favourites", { img_Id: imgId}); 
+      console.log("Added to favourites"); 
+    }
+  } catch (error) {
+    console.error("Error updating favourite:", error); 
+  }
   // your code here
-}
+}; 
 
 /**
  * 9. Test your favourite() function by creating a getFavourites() function.
