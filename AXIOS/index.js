@@ -2,9 +2,21 @@ import  axios from "axios"
 import * as Carousel from "./Carousel.js";
 import { API_KEY } from "./keys.js";
 
-
 axios.defaults.baseURL = "https://api.thecatapi.com/v1";
 axios.defaults.headers.common['x-api-key'] = API_KEY; 
+
+axios.interceptors.request.use((config) => {
+console.log("Request started:", config.url); 
+return config; 
+}); 
+
+axios.interceptors.response.use((response) => {
+  const elapsedTime = response.config.metadata?.startTime
+  ? Date.now() - response.config.metadata.startTime
+  :"Unknown";
+  console.log(`Request completed: ${response.config.urll} (${elapsedTime}ms)`);
+  return response; 
+}); 
 
 // The breed selection input element.
 const breedSelect = document.getElementById("breedSelect");
@@ -65,10 +77,16 @@ initialLoad();
  */
     async function fetchBreed(e){ 
       let breedId = e.target.value; 
-      let request = await axios.get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=10`); 
-      const data = await request.json(); 
-      return data; 
-    }
+    const config = {
+      params: {
+        breeds_ids: breedId, 
+        limit: 10,
+      }, 
+      metadata: {startTime: Date.now() }, 
+    };
+    const reponse = await axios.get(`https://api.thecatapi.com/v1/images/search?breed_ids=${breedId}&limit=10`, config); 
+    return reponse.data; 
+  } 
     breedSelect.addEventListener("change", async(e) => {
       Carousel.clear(); 
       Carousel.start(); 
